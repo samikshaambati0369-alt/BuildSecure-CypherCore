@@ -539,6 +539,32 @@ Actions Taken:
 * Preserved unrelated generated node_modules changes
 
 ================================================================================
+2026-10-06T01:13:48+05:30 Diagnosing signup failure shown in browser screenshot
+================================================================================
+User Prompt (verbatim):
+[Screenshot attached: FinTrack account creation page at localhost:5175 displays “Request failed”.]
+
+Agent Response:
+The screenshot exposes the likely cause: the page is open at `http://localhost:5175`, but the backend's configured allowed frontend origin is `http://localhost:5173` (`FRONTEND_URL` in the local environment configuration; documented by `.env.example`). The backend enforces an exact Origin match on POST requests, so a signup request from port 5175 is rejected with HTTP 403 “Blocked by origin security policy.” I verified this without creating an account: a synthetic request with Origin `http://localhost:5175` receives 403; the same request from `http://localhost:5173` passes the origin guard and reaches input validation (400, because the probe intentionally has no valid name).
+
+Use `http://localhost:5173` in the browser, matching the backend's allowed origin. If you intentionally want to use port 5175, set `FRONTEND_URL=http://localhost:5175` in the local backend environment and restart the backend; do not expose or send the `.env` contents. The screenshot's browser tab also suggests the backend may have been stopped at capture time, so ensure the backend and MySQL are running for account creation. At the time of this check, listeners existed on ports 5000, 5173, and 5175.
+
+Agent Response Summary:
+Identified an exact frontend/backend origin mismatch in the screenshot and reproduced its effect: port 5175 is rejected by the backend's CSRF/origin guard, while port 5173 reaches route validation. Recommended using the configured port 5173 or consistently updating the backend's allowed origin and restarting it; no account or source configuration was changed.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Inspected the attached screenshot's browser URL and error message
+* Read the configured origin security middleware and non-secret .env example
+* Compared synthetic signup requests from origins localhost:5175 and localhost:5173 (403 vs. 400 validation)
+* Checked current listeners on ports 5000, 5173, and 5175; did not inspect local .env contents
+
+================================================================================
 2026-10-06T01:06:18+05:30 Showing how to rerun FinTrack manually
 ================================================================================
 User Prompt (verbatim):
