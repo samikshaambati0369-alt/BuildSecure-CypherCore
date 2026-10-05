@@ -314,7 +314,7 @@ function AI({setMessage}) {
     <section className="panel ai-chat-panel">
       <div className="ai-chat-heading"><div><h3>Chat with FinTrack</h3><p>Your conversation is not saved by the app.</p></div><ShieldCheck size={20}/></div>
       <div className="ai-chat-messages" role="log" aria-live="polite" aria-label="Financial assistant conversation">
-        {!messages.length&&<div className="ai-chat-welcome"><Sparkles size={20}/><p>Hi! I can help you understand spending patterns from your recent activity. What would you like to know?</p><div className="ai-suggestions"><button type="button" onClick={()=>askSuggestion('Where am I spending the most?')}>Where am I spending the most?</button><button type="button" onClick={()=>askSuggestion('How are my expenses changing month to month?')}>How are my expenses trending?</button><button type="button" onClick={()=>askSuggestion('Which budgets should I pay attention to?')}>How are my budgets doing?</button></div></div>}
+        {!messages.length&&<div className="ai-chat-welcome"><Sparkles size={20}/><p>Hi! I automatically use any transactions and budgets you’ve saved in FinTrack from the last 90 days. You don’t need to paste or upload your history, and you don’t need a full 90 days of records. What would you like to know?</p><div className="ai-suggestions"><button type="button" onClick={()=>askSuggestion('Where am I spending the most?')}>Where am I spending the most?</button><button type="button" onClick={()=>askSuggestion('How are my expenses changing month to month?')}>How are my expenses trending?</button><button type="button" onClick={()=>askSuggestion('Which budgets should I pay attention to?')}>How are my budgets doing?</button></div></div>}
         {messages.map((message,index)=><article className={`ai-chat-message ${message.role}`} key={`${message.role}-${index}`}><strong>{message.role==='assistant'?'FinTrack assistant':'You'}</strong><p>{message.content}</p>{message.role==='assistant'&&<small>{message.provider==='openai'?'OpenAI':'Local spending insights (OpenAI key not configured)'}</small>}</article>)}
         {loading&&<article className="ai-chat-message assistant"><strong>FinTrack assistant</strong><p>Reviewing your spending summary…</p></article>}
         <div ref={messagesEndRef}/>
@@ -323,7 +323,7 @@ function AI({setMessage}) {
         <textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Ask about your expenses or budgets…" rows="2" maxLength="1000" aria-label="Message the financial assistant" disabled={loading}/>
         <button className="primary" type="submit" disabled={loading||!question.trim()}>{loading?'Thinking…':'Send'} <ArrowUpRight size={17}/></button>
       </form>
-      <p className="ai-privacy-note">For personalized answers, a summary of your last 90 days (totals, category/month trends, and budgets) and your chat messages are sent to OpenAI when configured. Your name, email, and transaction descriptions are not included.</p>
+      <p className="ai-privacy-note">FinTrack automatically uses any saved transactions and budgets from the last 90 days; you do not need to provide or upload your history. When OpenAI is configured, the anonymized summary and your chat messages are sent to OpenAI. Your name, email, and transaction descriptions are not included. Without an OpenAI key, suggestions are generated locally.</p>
     </section>
   </div>;
 }

@@ -446,3 +446,34 @@ Actions Taken:
 * Ran node --test src/ai-assistant/assistant.test.mjs (5 passing)
 * Ran Node syntax checks, workspace diagnostics, git diff --check, and npm run build (passed; bundle-size advisory)
 * Exercised unauthenticated and malformed-history API rejection; confirmed application health endpoints
+
+================================================================================
+2026-10-06T00:50:09+05:30 Clarifying automatic 90-day AI chat context
+================================================================================
+User Prompt (verbatim):
+the ai chat bot is asking previous 90 days history for using it and its suggestions
+
+Agent Response:
+The assistant does not require you to provide or upload 90 days of history. When you send a message, the backend automatically queries any transactions and budgets already saved in FinTrack for your signed-in account from the last 90 days; even less than 90 days of records can be used. I updated the chat welcome and privacy notice to state that explicitly, and instructed the OpenAI assistant not to ask you to paste, upload, or manually recount your financial history. If there are no transactions in that time range, it can only say that no recent activity is available and suggest recording transactions in FinTrack first.
+
+Added a regression assertion for the instruction sent to OpenAI. Validation: six assistant tests passed, diagnostics and whitespace checks passed, and the frontend production build succeeded (with the existing Vite bundle-size advisory). The local app remained on its existing page; its session-check view is separate from this build validation. No secrets were opened or exposed.
+
+Agent Response Summary:
+Clarified in the chat UI and model instructions that the last-90-days profile is collected automatically from the signed-in user's existing records, and a complete 90 days is not required. Documented this data flow and verified the tests and frontend build.
+
+Commit SHA:
+N/A (commit follows)
+
+Files Modified / Created:
+* src/ai-assistant/assistant.js (Modified)
+* src/ai-assistant/assistant.test.mjs (Modified)
+* src/frontend/src/App.jsx (Modified)
+* docs/APPROACH.md (Modified)
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Inspected the authenticated AI route, which automatically queries per-user transactions and budgets dated within the past 90 days
+* Updated chat welcome/privacy copy and system instructions to discourage manual history requests
+* Added a regression assertion for the system instruction
+* Ran six assistant tests, syntax and diagnostics checks, git diff --check, and frontend production build
+* Removed only the generated src/frontend/dist/ build output

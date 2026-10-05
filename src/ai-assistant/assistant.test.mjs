@@ -92,6 +92,7 @@ test('OpenAI request stays server-side and sends only the supplied financial sum
   assert.equal(request.options.headers.Authorization, 'Bearer test-only-key');
   const requestBody = JSON.parse(request.options.body);
   assert.equal(requestBody.model, 'gpt-4o-mini');
+  assert.match(requestBody.messages[0].content, /do not ask the user to paste, upload, or manually recount financial history/i);
   assert.equal(requestBody.messages.at(-1).content, 'How can I reduce food spending?');
   assert.doesNotMatch(requestBody.messages[1].content, /password|email|userId|transaction description/i);
 });
