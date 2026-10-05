@@ -565,6 +565,31 @@ Actions Taken:
 * Checked current listeners on ports 5000, 5173, and 5175; did not inspect local .env contents
 
 ================================================================================
+2026-10-06T01:15:55+05:30 Listing prerequisites and steps to run FinTrack
+================================================================================
+User Prompt (verbatim):
+what i need to inorder to run the application
+
+Agent Response:
+Requirements: Node.js/npm, the project's installed dependencies, MySQL with the FinTrack schema, and a valid backend environment file. Start MySQL in XAMPP first. Start the backend in one PowerShell terminal from `C:\Users\Sathwik\BuildSecure-CypherCore\src\backend` using `npm.cmd run dev`; its local `.env` must have DB settings matching the running MySQL database and a JWT_SECRET of at least 32 characters. Do not share that secret file. Start the frontend in a second terminal from `C:\Users\Sathwik\BuildSecure-CypherCore\src\frontend` using `npm.cmd run dev -- --host localhost --port 5173 --strictPort`. Then browse to `http://localhost:5173` (not `localhost:5175`), because the backend's allowed origin is `http://localhost:5173`. Leave both terminals running. Verify the backend at `http://localhost:5000/api/health`; stop services with Ctrl+C.
+
+At the time of this answer, MySQL is listening on port 3306 and services have listeners on ports 5000, 5173, and 5175. The screenshot's 5175 URL explains the signup rejection: it fails the backend origin check. Use 5173. No AI key is needed to run the main application or use local fallback AI suggestions.
+
+Agent Response Summary:
+Listed the runtime/database/config prerequisites and exact PowerShell commands to start MySQL-dependent backend and frontend separately. Emphasized that the frontend must be opened on port 5173 to match the backend's origin policy, and protected the `.env` secret.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Read the agent contract, relevant architecture notes, package scripts, and non-secret environment example
+* Checked current MySQL and frontend/backend listeners
+* Recorded concise startup requirements and the screenshot port mismatch; did not edit source or inspect secrets
+
+================================================================================
 2026-10-06T01:06:18+05:30 Showing how to rerun FinTrack manually
 ================================================================================
 User Prompt (verbatim):
