@@ -477,3 +477,36 @@ Actions Taken:
 * Added a regression assertion for the system instruction
 * Ran six assistant tests, syntax and diagnostics checks, git diff --check, and frontend production build
 * Removed only the generated src/frontend/dist/ build output
+
+================================================================================
+2026-10-06T00:51:41+05:30 Explaining how to run FinTrack manually
+================================================================================
+User Prompt (verbatim):
+how to run the application manually in browser
+
+Agent Response:
+To run FinTrack locally, start the backend and frontend in two separate PowerShell terminals from the repository root.
+
+Terminal 1:
+    cd src\backend
+    npm.cmd run dev
+
+Terminal 2:
+    cd src\frontend
+    npm.cmd run dev
+
+Keep both terminals open, then open http://localhost:5173 in your browser. Make sure MySQL is running and the backend's local .env contains correct database settings and JWT_SECRET; do not share or paste that file. Check the backend at http://localhost:5000/api/health if the frontend cannot connect. If the Vite port differs, use the URL printed by Vite. Stop either service with Ctrl+C in its terminal.
+
+Agent Response Summary:
+Provided manual local-run steps for the Express API and Vite client, including the exact PowerShell directories and npm.cmd commands, browser address, MySQL prerequisite, health check, and stop instructions. No application files or local secrets were changed or exposed.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Read the repository instructions, backend/frontend package scripts, API configuration, and non-secret backend environment example
+* Confirmed configured Git branch and remote; preserved unrelated generated node_modules changes
+* Recorded the manual startup instructions in the append-only turn log
