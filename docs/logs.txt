@@ -627,6 +627,38 @@ Actions Taken:
 * Did not read the tagged .env or modify application code
 
 ================================================================================
+2026-10-06T01:20:42+05:30 Explaining existing frontend port conflict
+================================================================================
+User Prompt (verbatim):
+> fintrack-frontend@1.0.0 dev
+>
+> vite --host localhost --port 5173 --strictPort
+>
+> error when starting dev server:
+> Error: Port 5173 is already in use
+>     at Server.onError$1 (file:///C:/Users/Sathwik/BuildSecure-CypherCore/src/frontend/node_modules/vite/dist/node/chunks/config.js:15006:28)
+>     at Server.emit (node:events:514:28)
+>     at emitErrorNT (node:net:2412:8)
+>     at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+Agent Response:
+Port 5173 is already occupied because the frontend is already running there; starting a second Vite instance with --strictPort correctly exits instead of choosing another port. Current checks confirm http://localhost:5173 serves the app (HTTP 200), http://localhost:5000/api/health responds successfully, and MySQL port 3306 is available. No restart is needed: use the existing browser tab or open http://localhost:5173. If you specifically want to restart the frontend, stop the original Vite process with Ctrl+C in its own terminal, then start it once with `npm.cmd run dev -- --host localhost --port 5173 --strictPort`. Do not kill a process by PID unless you have verified it is yours.
+
+Agent Response Summary:
+Explained the port error as an already-running frontend instance, not an application failure. Verified frontend, backend, and MySQL availability and advised reusing the existing app or restarting only from its original terminal.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Read AGENTS.md and checked recent run context
+* Verified localhost:5173 frontend, localhost:5000 API health, and MySQL port 3306
+* Preserved unrelated generated node_modules changes; did not stop any processes or inspect .env
+
+================================================================================
 2026-10-06T01:06:18+05:30 Showing how to rerun FinTrack manually
 ================================================================================
 User Prompt (verbatim):
