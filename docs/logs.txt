@@ -313,7 +313,7 @@ Agent Response Summary:
 Added an authenticated, rate-limited AI chat backed by per-user aggregated expense behavior, with OpenAI used only from the backend and a local fallback when its key is absent. Added bounded input/history validation, privacy minimization, endpoint pinning, timeout/response checks, UI privacy disclosure, security documentation, and tests. Removed the backend .env from Git tracking without deleting the developer's local copy.
 
 Commit SHA:
-N/A (implementation validated; commit not yet created)
+acb354f (implementation commit; log commit follows)
 
 Files Modified / Created:
 * src/ai-assistant/.gitkeep (Deleted)
