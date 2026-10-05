@@ -501,7 +501,7 @@ Agent Response Summary:
 Provided manual local-run steps for the Express API and Vite client, including the exact PowerShell directories and npm.cmd commands, browser address, MySQL prerequisite, health check, and stop instructions. No application files or local secrets were changed or exposed.
 
 Commit SHA:
-N/A (log-only commit follows)
+b4e1e10
 
 Files Modified / Created:
 * docs/logs.txt (Modified)
