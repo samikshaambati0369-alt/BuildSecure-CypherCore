@@ -4,16 +4,16 @@
 # - If your team has 4 members: provide all 4 members.
 
 team:
-  team_id: ""
-  name: ""
-  repository: "" # URL of the newly created GitHub repository for this project
-
-members:
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
-  - name: ""
-    email: ""
+  id: "63"
+  name: "CipherCore"
+  size: 4
+  repository: "https://github.com/samikshaambati0369-alt/BuildSecure-CypherCore.git"
+  members:
+    - name: "Samiksha Ambati"
+      email: "samikshamabati0369@gmail.com"
+    - name: "Saicharan Adapa"
+      email: "adapasaicharan1919@gmail.com"
+    - name: "Sathwik Ale"
+      email: "sathwikale31@gmail.com"
+    - name: "Gouthami Malve"
+      email: "malvegouthami30@gmail.com"
