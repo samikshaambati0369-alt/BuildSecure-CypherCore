@@ -80,3 +80,4 @@ All 4 team members can work simultaneously across separate laptops:
 ---
 
 *Build freely. Use AI freely. Secure what you build. Document what you claim. Prove what you implemented.*
+*hiiiiiii*
