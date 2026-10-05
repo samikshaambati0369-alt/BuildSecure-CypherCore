@@ -280,7 +280,7 @@ Agent Response Summary:
 Applied the relevant protections while respecting the selected shared server-key design: anonymized arbitrary category text sent to OpenAI, preserved user-ID-scoped queries and React text rendering, and documented why DOMPurify and per-user AES key storage are not needed for the current design. Added a regression test and verified the assistant suite and local app endpoints.
 
 Commit SHA:
-N/A (commit follows)
+fc89202
 
 Files Modified / Created:
 * src/ai-assistant/assistant.js (Modified)
