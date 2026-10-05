@@ -590,6 +590,43 @@ Actions Taken:
 * Recorded concise startup requirements and the screenshot port mismatch; did not edit source or inspect secrets
 
 ================================================================================
+2026-10-06T01:19:46+05:30 Explaining nodemon clean exit and live backend state
+================================================================================
+User Prompt (verbatim):
+> fintrack-backend@1.0.0 dev
+>
+> nodemon server.js
+>
+> [nodemon] 3.1.14
+> [nodemon] to restart at any time, enter `rs`
+> [nodemon] watching path(s): *.*
+> [nodemon] watching extensions: js,mjs,cjs,json
+> [nodemon] starting `node server.js`
+> ◇ injected env (11) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+> ◇ injected env (0) from .env // tip: ⌘ enable debugging { debug: true }
+> Warning: COOKIE_SECURE is not configured. Use false for local HTTP development and true for HTTPS production.
+> FinTrack API listening on port 5000
+> [nodemon] clean exit - waiting for changes before restart
+
+Agent Response:
+The `COOKIE_SECURE` line is only a warning; it does not cause this. “Nodemon clean exit” means the child `node server.js` process ended without reporting a crash, so nodemon remains open waiting for a file change instead of actively supervising a running server. Normally Express `app.listen(5000)` should keep that Node process alive. However, the API is responding now (`/api/health` returns success), MySQL port 3306 is reachable, and the current listener on port 5000 is a separate `node server.js` process. Multiple backend Node/nodemon processes exist, so the output may be from one run while another backend instance serves requests. Do not start more copies yet. If this terminal displays the clean-exit message, check whether `http://localhost:5000/api/health` responds; if it does, there is another server instance running. To identify the exact process/terminal safely, stop only the instance you started with Ctrl+C in that terminal, then start one backend with `npm.cmd run dev` from `src\\backend` and confirm it remains active and health responds. Keep frontend at port 5173. The duplicate dotenv messages indicate configuration was loaded by more than one module, not that server startup failed.
+
+Agent Response Summary:
+Explained that nodemon's clean-exit line is distinct from the non-fatal COOKIE_SECURE warning and means that particular child process exited normally. Current health checks show another backend process is serving, with multiple Node backend processes present; advised avoiding additional copies and managing only the user's own terminal process.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Read AGENTS.md, backend startup script, current logs, and relevant configuration example
+* Verified API health, MySQL connectivity, and listener ownership on ports 5000 and 5173
+* Identified a node server.js process holding port 5000 and multiple backend Node processes; did not terminate any process
+* Did not read the tagged .env or modify application code
+
+================================================================================
 2026-10-06T01:06:18+05:30 Showing how to rerun FinTrack manually
 ================================================================================
 User Prompt (verbatim):
