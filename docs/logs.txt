@@ -254,6 +254,48 @@ Actions Taken:
 * Appended session start and turn details to docs/logs.txt
 
 ================================================================================
+2026-10-06T00:45:13+05:30 Strengthening AI assistant privacy and injection defenses
+================================================================================
+User Prompt (verbatim):
+### Directly for the AI Chatbot (3 Checks)
+
+1. **AI Output Sanitization & Indirect Prompt Injection Shield (`DOMPurify`)**
+
+- **What it does:** Prevents attackers from embedding malicious scripts inside transaction notes that the AI might read and output to the chat window, blocking **Cross-Site Scripting (XSS)**.
+2. **AES-256-GCM Encryption for User API Keys (`openssl_encrypt`)**
+
+- **What it does:** Securely encrypts third-party AI provider keys (e.g., OpenAI/Gemini API keys) configured by users before saving them in MySQL, preventing API key theft if the database is breached.
+3. **Tool Execution Authorization & Context Anonymization**
+
+- **What it does:** Strips personally identifiable information (PII) before passing financial context to the LLM, and forces all database function calls executed by the chatbot to use `$_SESSION['user_id']` so the AI cannot access another user's financial records (**BOLA/IDOR Defense**). these are the security checks for the ai assisstant and for its defense
+
+Agent Response:
+After the user selected “Keep one server-managed key in backend .env (Recommended),” kept provider-key storage out of scope; no per-user API keys are persisted, so AES-256-GCM database encryption is not applicable. Added minimization for user-created category labels in the external model payload: known categories are canonicalized and all custom labels are replaced with stable generic labels, preventing arbitrary PII or prompt-injection text in category names from being sent to the model. Existing SQL continues to use the authenticated req.user.id, and the authenticated route has no model-invoked database tools.
+
+Model responses continue to render as ordinary React text nodes, not HTML. React escapes this content, so DOMPurify would add no protection in the current rendering path; documentation now requires an HTML sanitizer such as DOMPurify if rich HTML/Markdown rendering is ever introduced. Updated the architecture record to capture the shared-key decision and response-rendering control.
+
+Validation: all six assistant tests pass, including custom-category anonymization and proof that the anonymized payload contains no supplied email/script text; syntax checks, workspace diagnostics, and whitespace checks pass. Frontend and API health checks returned HTTP 200. OpenAI itself was not called.
+
+Agent Response Summary:
+Applied the relevant protections while respecting the selected shared server-key design: anonymized arbitrary category text sent to OpenAI, preserved user-ID-scoped queries and React text rendering, and documented why DOMPurify and per-user AES key storage are not needed for the current design. Added a regression test and verified the assistant suite and local app endpoints.
+
+Commit SHA:
+N/A (commit follows)
+
+Files Modified / Created:
+* src/ai-assistant/assistant.js (Modified)
+* src/ai-assistant/assistant.test.mjs (Modified)
+* docs/APPROACH.md (Modified)
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Added model-context category canonicalization and custom-label replacement
+* Added regression coverage for PII/script-bearing custom category labels
+* Documented safe React text rendering and shared server-managed provider key decision
+* Ran node --test src/ai-assistant/assistant.test.mjs (6 passing)
+* Ran Node syntax checks, workspace diagnostics, git diff --check, and frontend/API health checks
+
+================================================================================
 2026-10-05T23:03:25+05:30 Explaining what stopped execution
 ================================================================================
 User Prompt (verbatim):

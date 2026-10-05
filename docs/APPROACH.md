@@ -29,7 +29,7 @@
 *Describe the multi-tier system structure (Client / API Gateway / Domain Services / Data Persistence).*
 
 ### 2.2 Data Flow & Component Interaction
-The authenticated React client sends chat messages to `POST /api/ai/chat`. The Express route verifies the signed session, applies the AI request rate limit, validates message/history size and roles, and queries only rows scoped to the authenticated user's ID. It sends a minimized 90-day aggregate (income/expenses, category and monthly totals, active budgets) to the assistant; names, emails, and transaction descriptions are excluded. The OpenAI key remains server-side. Chat history is short-lived in the browser and is not persisted by the application.
+The authenticated React client sends chat messages to `POST /api/ai/chat`. The Express route verifies the signed session, applies the AI request rate limit, validates message/history size and roles, and queries only rows scoped to the authenticated user's ID. It sends a minimized 90-day aggregate (income/expenses, category and monthly totals, active budgets) to the assistant; names, emails, and transaction descriptions are excluded. Known category names use a fixed allowlist; arbitrary custom category text is replaced with `Custom category N` labels before an external model call to avoid disclosing user-entered text or carrying prompt injection in a category label. The shared OpenAI key remains server-side. Chat history is short-lived in the browser and is not persisted by the application.
 
 ### 2.3 Technology Stack Rationale
 *Explain the tools selected and why alternatives were rejected:*
@@ -45,7 +45,7 @@ The authenticated React client sends chat messages to `POST /api/ai/chat`. The E
 3. **Input Validation & Sanitization:** (e.g., strict schema validation, query parameterization to prevent SQLi)
 4. **Rate Limiting & Abuse Prevention:** (e.g., IP/token bucket throttling on public endpoints)
 5. **Secrets & Configuration Hygiene:** (e.g., zero hardcoded credentials, 100% environment variable isolation)
-6. **Personalized AI:** AI routes require authentication, share a strict request-rate limit, accept only bounded user/assistant history, and derive financial context from the authenticated user's records. OpenAI is called only from the backend with a server-side API key; the URL is pinned to the official HTTPS endpoint. No raw descriptions or identity fields are sent. The client displays a privacy notice and local-only fallback is used when no API key is configured.
+6. **Personalized AI:** AI routes require authentication, share a strict request-rate limit, accept only bounded user/assistant history, and derive financial context from the authenticated user's records. OpenAI is called only from the backend with a shared server-side API key; the URL is pinned to the official HTTPS endpoint. No raw descriptions, identity fields, or arbitrary custom category labels are sent. The client renders assistant output as ordinary React text nodes (not HTML); do not change this to HTML/Markdown rendering without adding and testing an HTML sanitizer such as DOMPurify. The client displays a privacy notice and local-only fallback is used when no API key is configured.
 
 ---
 
@@ -84,8 +84,8 @@ The authenticated React client sends chat messages to `POST /api/ai/chat`. The E
 - **Options Considered:**
   1. Call OpenAI directly from the browser with transaction data.
   2. Route authenticated chat through the backend and send only aggregate financial data.
-- **Decision & Rationale:** Use the backend route, verify the signed-in user, rate-limit and validate each request, and query a privacy-minimized 90-day profile scoped by user ID. Keep OpenAI credentials on the server and pin requests to OpenAI's official HTTPS chat endpoint.
-- **Security & Performance Trade-offs:** The external model receives the prompt, bounded recent chat history, and financial aggregates when configured; it does not receive names, emails, or raw descriptions. Calls have a timeout and bounded response, and a local aggregate-based fallback works without an API key. Chat history is not persisted by the application.
+- **Decision & Rationale:** Use the backend route, verify the signed-in user, rate-limit and validate each request, and query a privacy-minimized 90-day profile scoped by user ID. Keep one shared OpenAI credential in server environment configuration and pin requests to OpenAI's official HTTPS chat endpoint; users do not store individual provider keys.
+- **Security & Performance Trade-offs:** The external model receives the prompt, bounded recent chat history, and financial aggregates when configured; it does not receive names, emails, raw descriptions, or arbitrary custom category strings. Calls have a timeout and bounded response, and a local aggregate-based fallback works without an API key. Chat history is not persisted by the application. Since no per-user provider keys are stored, there is no database key-encryption key or user key-rotation flow to secure.
 
 ---
 

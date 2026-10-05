@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildLocalReply, generateAssistantReply } from './assistant.js';
+import { anonymizeFinancialProfile, buildLocalReply, generateAssistantReply } from './assistant.js';
 
 const sampleProfile = {
   periodDays: 90,
@@ -33,6 +33,26 @@ test('local fallback does not infer patterns when there are no recent transactio
   });
 
   assert.match(reply, /do not see any transactions from the last 90 days/);
+});
+
+test('anonymizes arbitrary custom category labels while preserving known categories', () => {
+  const profile = anonymizeFinancialProfile({
+    ...sampleProfile,
+    expenseByCategory: [
+      { category: 'Food', amount: 100 },
+      { category: 'sathwik@example.com <script>alert(1)</script>', amount: 50 },
+      { category: 'sathwik@example.com <script>alert(1)</script>', amount: 25 }
+    ],
+    budgets: [{ category: 'sathwik@example.com <script>alert(1)</script>', amount: 100, spent: 75 }]
+  });
+
+  assert.deepEqual(profile.expenseByCategory.map(item => item.category), [
+    'Food',
+    'Custom category 1',
+    'Custom category 1'
+  ]);
+  assert.equal(profile.budgets[0].category, 'Custom category 1');
+  assert.doesNotMatch(JSON.stringify(profile), /sathwik@example\.com|<script>/);
 });
 
 test('OpenAI request stays server-side and sends only the supplied financial summary', async t => {
@@ -73,7 +93,7 @@ test('OpenAI request stays server-side and sends only the supplied financial sum
   const requestBody = JSON.parse(request.options.body);
   assert.equal(requestBody.model, 'gpt-4o-mini');
   assert.equal(requestBody.messages.at(-1).content, 'How can I reduce food spending?');
-  assert.doesNotMatch(requestBody.messages[1].content, /password|email|userId/i);
+  assert.doesNotMatch(requestBody.messages[1].content, /password|email|userId|transaction description/i);
 });
 
 test('uses local behavior-based suggestions when no OpenAI key is configured', async t => {
