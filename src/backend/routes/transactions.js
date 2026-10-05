@@ -20,7 +20,9 @@ router.get('/', [
   query('type').optional().isIn(['INCOME','EXPENSE']),
   query('category').optional().trim().isLength({ max: 80 }),
   query('from').optional().isISO8601(),
-  query('to').optional().isISO8601()
+  query('to').optional().isISO8601(),
+  query('page').optional().isInt({ min: 1, max: 100000 }),
+  query('limit').optional().isInt({ min: 1, max: 100 })
 ], validate, async (req, res, next) => {
   try {
     const conditions = ['user_id = ?'];
@@ -31,19 +33,25 @@ router.get('/', [
     if (req.query.from) { conditions.push('transaction_date >= ?'); params.push(req.query.from); }
     if (req.query.to) { conditions.push('transaction_date <= ?'); params.push(req.query.to); }
 
+    const page = Number(req.query.page || 1);
+    const limit = Number(req.query.limit || 50);
+    const offset = (page - 1) * limit;
+
     const [rows] = await pool.execute(
       `SELECT id, type, amount, category, description, transaction_date, created_at, updated_at
        FROM transactions WHERE ${conditions.join(' AND ')}
-       ORDER BY transaction_date DESC, id DESC`,
-      params
+       ORDER BY transaction_date DESC, id DESC
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
     );
-    res.json({ success: true, data: rows });
+    res.json({ success: true, data: rows, pagination: { page, limit, returned: rows.length } });
   } catch (err) { next(err); }
 });
 
 router.post('/', common, validate, async (req, res, next) => {
   try {
     const { type, amount, category, description = '', transaction_date } = req.body;
+    if (new Date(transaction_date) > new Date()) return res.status(400).json({ success: false, message: 'Transaction date cannot be in the future' });
     const [result] = await pool.execute(
       `INSERT INTO transactions (user_id, type, amount, category, description, transaction_date)
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -61,6 +69,7 @@ router.put('/:id', [
   try {
     const { id } = req.params;
     const { type, amount, category, description = '', transaction_date } = req.body;
+    if (new Date(transaction_date) > new Date()) return res.status(400).json({ success: false, message: 'Transaction date cannot be in the future' });
     const [result] = await pool.execute(
       `UPDATE transactions
        SET type=?, amount=?, category=?, description=?, transaction_date=?

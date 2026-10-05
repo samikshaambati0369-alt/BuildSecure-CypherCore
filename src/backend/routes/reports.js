@@ -10,11 +10,15 @@ router.get('/csv', async (req, res, next) => {
   try {
     const [rows] = await pool.execute(
       `SELECT transaction_date, type, category, amount, description
-       FROM transactions WHERE user_id=? ORDER BY transaction_date DESC`,
+       FROM transactions WHERE user_id=? ORDER BY transaction_date DESC LIMIT 10000`,
       [req.user.id]
     );
 
-    const escape = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const escape = value => {
+      let text = String(value ?? '');
+      if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+      return `"${text.replaceAll('\"', '\"\"')}"`;
+    };
     const csv = [
       'Date,Type,Category,Amount,Description',
       ...rows.map(r => [r.transaction_date, r.type, r.category, r.amount, r.description].map(escape).join(','))

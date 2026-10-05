@@ -6,7 +6,8 @@ import api from './api';
 const categories = ['Food','Transport','Education','Shopping','Entertainment','Bills','Healthcare','Rent','Other'];
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('fintrack_token'));
+  const [authenticated, setAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [user, setUser] = useState(null);
   const [page, setPage] = useState('dashboard');
   const [dashboard, setDashboard] = useState(null);
@@ -18,7 +19,7 @@ function App() {
   const [message, setMessage] = useState('');
 
   const loadData = async () => {
-    if (!token) return;
+    if (!authenticated) return;
     setLoading(true);
     try {
       const [me, dash, tx, bs] = await Promise.all([
@@ -34,7 +35,16 @@ function App() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadData(); }, [token]);
+  useEffect(() => {
+    let active = true;
+    api.get('/auth/me')
+      .then(r => { if (active) { setUser(r.data.data); setAuthenticated(true); } })
+      .catch(() => { if (active) setAuthenticated(false); })
+      .finally(() => { if (active) setCheckingAuth(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => { if (authenticated) loadData(); }, [authenticated]);
 
   const login = async e => {
     e.preventDefault();
@@ -45,8 +55,8 @@ function App() {
         : authForm;
       const r = await api.post(endpoint, payload);
       if (authMode === 'login') {
-        localStorage.setItem('fintrack_token', r.data.data.token);
-        setToken(r.data.data.token);
+        setAuthenticated(true);
+        setUser(r.data.data.user);
         setMessage('');
       } else {
         setAuthMode('login');
@@ -55,12 +65,13 @@ function App() {
     } catch (e) { setMessage(e.response?.data?.message || 'Request failed'); }
   };
 
-  const logout = () => {
-    localStorage.removeItem('fintrack_token');
-    setToken(null); setUser(null); setDashboard(null);
+  const logout = async () => {
+    try { await api.post('/auth/logout'); } catch {}
+    setAuthenticated(false); setUser(null); setDashboard(null); setTransactions([]); setBudgets([]);
   };
 
-  if (!token) return <AuthScreen mode={authMode} setMode={setAuthMode} form={authForm} setForm={setAuthForm} onSubmit={login} message={message} />;
+  if (checkingAuth) return <div className="auth-page"><div className="auth-card"><div className="loading-bar"/><p className="muted">Checking secure session...</p></div></div>;
+  if (!authenticated) return <AuthScreen mode={authMode} setMode={setAuthMode} form={authForm} setForm={setAuthForm} onSubmit={login} message={message} />;
 
   const nav = [
     ['dashboard','Dashboard',LayoutDashboard],
@@ -107,7 +118,7 @@ function AuthScreen({mode,setMode,form,setForm,onSubmit,message}) {
       <form onSubmit={onSubmit}>
         {mode==='register' && <input placeholder="Full name" value={form.name} onChange={e=>setForm({...form,name:e.target.value})} required/>}
         <input type="email" placeholder="Email address" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required/>
-        <input type="password" placeholder="Password (8+ characters)" minLength="8" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/>
+        <input type="password" placeholder="Password (10+ characters)" minLength="10" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} required/>
         {message && <div className="form-message">{message}</div>}
         <button className="primary wide" type="submit">{mode==='login'?'Sign in':'Create account'} <ArrowUpRight size={17}/></button>
       </form>
