@@ -19,6 +19,17 @@ const app = express();
 const PORT = Number(process.env.PORT || 5000);
 const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+// Rate-limit state-changing API calls without penalizing normal dashboard reads.
+// Authentication and AI endpoints have their own stricter route-specific limits.
+const mutationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  skip: (req) => req.method === 'GET' || req.path.startsWith('/api/auth'),
+  message: { success: false, message: 'Too many requests. Please slow down and try again later.' }
+});
+
 app.disable('x-powered-by');
 app.set('trust proxy', process.env.TRUST_PROXY === 'true');
 
@@ -34,13 +45,7 @@ app.use(cors({
 }));
 app.use(enforceBrowserOrigin);
 app.use(express.json({ limit: '50kb', strict: true }));
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 120,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Please try again later.' }
-}));
+app.use(mutationLimiter);
 
 app.get('/api/health', (req, res) => res.json({ success: true, service: 'FinTrack API' }));
 app.use('/api/auth', authRoutes);

@@ -13,7 +13,7 @@ const DUMMY_PASSWORD_HASH = '$2b$12$b.Pvx74LoeMLFch02hT1POK.PXkyQaWYelXxFv4iLBib
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 8,
+  limit: 15,
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   skipSuccessfulRequests: true,

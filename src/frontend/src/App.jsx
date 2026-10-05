@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutDashboard, ReceiptText, WalletCards, Bot, FileDown, UserCircle, LogOut, Plus, ShieldCheck, ArrowUpRight, ArrowDownRight, Trash2, Sparkles } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import api from './api';
@@ -17,22 +17,27 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({name:'',email:'',password:''});
   const [message, setMessage] = useState('');
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const loadingDataRef = useRef(false);
 
   const loadData = async () => {
-    if (!authenticated) return;
+    if (!authenticated || loadingDataRef.current) return;
+    loadingDataRef.current = true;
     setLoading(true);
     try {
-      const [me, dash, tx, bs] = await Promise.all([
-        api.get('/auth/me'), api.get('/dashboard'), api.get('/transactions'), api.get('/budgets')
+      const [dash, tx, bs] = await Promise.all([
+        api.get('/dashboard'), api.get('/transactions'), api.get('/budgets')
       ]);
-      setUser(me.data.data);
       setDashboard(dash.data.data);
       setTransactions(tx.data.data);
       setBudgets(bs.data.data);
     } catch (e) {
       if (e.response?.status === 401) logout();
       else setMessage(e.response?.data?.message || 'Unable to load data');
-    } finally { setLoading(false); }
+    } finally {
+      loadingDataRef.current = false;
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -48,6 +53,9 @@ function App() {
 
   const login = async e => {
     e.preventDefault();
+    if (authSubmitting) return;
+    setAuthSubmitting(true);
+    setMessage('');
     try {
       const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
       const payload = authMode === 'login'
@@ -62,7 +70,11 @@ function App() {
         setAuthMode('login');
         setMessage('Account created. Please login.');
       }
-    } catch (e) { setMessage(e.response?.data?.message || 'Request failed'); }
+    } catch (e) {
+      setMessage(e.response?.data?.message || 'Request failed');
+    } finally {
+      setAuthSubmitting(false);
+    }
   };
 
   const logout = async () => {
@@ -150,21 +162,65 @@ function Dashboard({data}) {
   </div>;
 }
 
-function Stat({title,value,icon:Icon,type,raw}) {
-  return <div className="stat-card"><div className="stat-icon"><Icon size={18}/></div><span>{title}</span><strong>{raw?value:`₹${Number(value).toLocaleString(undefined,{maximumFractionDigits:2})}`}</strong>{type && <small className={type}>{type==='income'?'Money in':'Money out'}</small>}</div>;
+function Stat({title, value, icon: Icon, type, raw}) {
+  return (
+    <div className="stat-card">
+      <div className="stat-icon">
+        {Icon ? <Icon size={18} /> : <WalletCards size={18} />}
+      </div>
+
+      <span>{title}</span>
+
+      <strong>
+        {raw
+          ? value
+          : `₹${Number(value).toLocaleString(undefined, {
+              maximumFractionDigits: 2
+            })}`}
+      </strong>
+
+      {type && (
+        <small className={type}>
+          {type === 'income' ? 'Money in' : 'Money out'}
+        </small>
+      )}
+    </div>
+  );
 }
 
 function Transactions({transactions,reload,setMessage}) {
   const [form,setForm]=useState({type:'EXPENSE',amount:'',category:'Food',description:'',transaction_date:new Date().toISOString().slice(0,10)});
   const [filter,setFilter]=useState('');
-  const add = async e => { e.preventDefault(); try { await api.post('/transactions',form); setForm({...form,amount:'',description:''}); setMessage('Transaction added successfully'); reload(); } catch(e){setMessage(e.response?.data?.message||'Unable to add transaction');} };
+  const add = async e => { e.preventDefault(); try { await api.post('/transactions',form); setForm({...form,amount:'',description:''}); setMessage('Budget created successfully'); reload(); } catch(e){setMessage(e.response?.data?.message||'Unable to add transaction');} };
   const del = async id => { if(!confirm('Delete this transaction?')) return; try {await api.delete(`/transactions/${id}`); reload();} catch(e){setMessage('Unable to delete transaction');} };
   const shown=transactions.filter(t=>!filter||t.type===filter);
   return <div className="page-content"><div className="grid-two">
     <section className="panel"><div className="panel-head"><div><h3>Add transaction</h3><p>Record income or expense</p></div><Plus size={20}/></div>
       <form className="stack-form" onSubmit={add}><div className="segmented"><button type="button" className={form.type==='EXPENSE'?'selected':''} onClick={()=>setForm({...form,type:'EXPENSE'})}>Expense</button><button type="button" className={form.type==='INCOME'?'selected':''} onClick={()=>setForm({...form,type:'INCOME'})}>Income</button></div>
       <input type="number" min="0.01" step="0.01" placeholder="Amount (₹)" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} required/>
-      <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select>
+      <select
+  value={form.category}
+  onChange={e => setForm({...form, category: e.target.value})}
+>
+  {categories.map(c => (
+    <option key={c} value={c}>
+      {c}
+    </option>
+  ))}
+  <option value="CUSTOM">+ Add custom category</option>
+</select>
+
+{form.category === 'CUSTOM' && (
+  <input
+    type="text"
+    placeholder="Enter your category"
+    value={form.customCategory || ''}
+    onChange={e =>
+      setForm({...form, customCategory: e.target.value})
+    }
+    required
+  />
+)}
       <input type="date" value={form.transaction_date} onChange={e=>setForm({...form,transaction_date:e.target.value})} required/>
       <input placeholder="Description" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/>
       <button className="primary wide">Save transaction</button></form>
@@ -180,7 +236,46 @@ function TransactionTable({rows,onDelete}) {
 
 function Budget({budgets,reload,setMessage}) {
   const [form,setForm]=useState({category:'Food',amount:'',period:'MONTHLY',start_date:new Date().toISOString().slice(0,8)+'01',end_date:new Date().toISOString().slice(0,10)});
-  const add=async e=>{e.preventDefault();try{await api.post('/budgets',form);setForm({...form,amount:''});setMessage('Budget created');reload();}catch(e){setMessage(e.response?.data?.message||'Unable to create budget');}};
+const add = async e => {
+  e.preventDefault();
+
+  try {
+    const category =
+      form.category === 'CUSTOM'
+        ? form.customCategory?.trim()
+        : form.category;
+
+    if (!category) {
+      setMessage('Please enter a category');
+      return;
+    }
+
+    await api.post('/budgets', {
+      category,
+      amount: Number(form.amount),
+      period: form.period,
+      start_date: form.start_date,
+      end_date: form.end_date
+    });
+
+    setForm({
+      category: 'Food',
+      amount: '',
+      period: 'MONTHLY',
+      start_date: new Date().toISOString().slice(0, 8) + '01',
+      end_date: new Date().toISOString().slice(0, 10)
+    });
+
+    setMessage('Transaction added successfully');
+    reload();
+
+  } catch (e) {
+    setMessage(
+      e.response?.data?.message ||
+      'Unable to add transaction'
+    );
+  }
+};
   const del=async id=>{if(confirm('Delete this budget?')){await api.delete(`/budgets/${id}`);reload();}};
   return <div className="page-content"><div className="grid-two"><section className="panel"><div className="panel-head"><div><h3>Create a budget</h3><p>Set limits for spending categories</p></div><WalletCards size={20}/></div><form className="stack-form" onSubmit={add}><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select><input type="number" min="0.01" step="0.01" placeholder="Budget amount (₹)" value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} required/><select value={form.period} onChange={e=>setForm({...form,period:e.target.value})}><option>MONTHLY</option><option>WEEKLY</option><option>CUSTOM</option></select><div className="date-row"><input type="date" value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})}/><input type="date" value={form.end_date} onChange={e=>setForm({...form,end_date:e.target.value})}/></div><button className="primary wide">Create budget</button></form></section><section className="panel"><div className="panel-head"><div><h3>Your budgets</h3><p>Monitor limits and actual spending</p></div></div>{budgets.length?budgets.map(b=><div className="budget-row" key={b.id}><div className="budget-title"><strong>{b.category}</strong><button className="icon-btn danger" onClick={()=>del(b.id)}><Trash2 size={15}/></button></div><BudgetProgress b={b}/></div>):<div className="empty small">No budgets created yet.</div>}</section></div></div>;
 }
@@ -195,7 +290,7 @@ function AI({setMessage}) {
   const [answer,setAnswer]=useState('');
   const [loading,setLoading]=useState(false);
   const ask=async e=>{e.preventDefault();setLoading(true);try{const r=await api.post('/ai/insights',{question:q});setAnswer(r.data.data.answer);}catch(e){setMessage(e.response?.data?.message||'AI request failed');}finally{setLoading(false);}};
-  return <div className="page-content"><section className="ai-hero"><div className="ai-orb"><Bot size={34}/></div><span className="eyebrow">AI FINANCIAL ASSISTANT</span><h2>Turn your spending data into <span>useful decisions.</span></h2><p>The assistant analyzes only your authorized financial context and provides practical budgeting guidance.</p></section><section className="panel ai-panel"><form onSubmit={ask}><textarea value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about your spending..." rows="4"/><button className="primary">{loading?'Analyzing...':'Get AI insight'} <Sparkles size={17}/></button></form>{answer&&<div className="ai-answer"><div className="answer-label"><Sparkles size={17}/> FINTRACK INSIGHT</div><p>{answer}</p></div>}</section></div>;
+  return <div className="page-content"><section className="ai-hero"><div className="ai-orb"><Bot size={34}/></div><span className="eyebrow">AI FINANCIAL ASSISTANT</span><h2>Turn your spending data into <span>useful decisions.</span></h2><p>The assistant analyzes only your authorized financial context and provides practical budgeting guidance.</p></section><section className="panel ai-panel"><form onSubmit={ask}><textarea value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about your spending..." rows="4"/><button className="primary" type="submit" disabled={loading}>{loading?'Analyzing...':'Get AI insight'} <Sparkles size={17}/></button></form>{answer&&<div className="ai-answer"><div className="answer-label"><Sparkles size={17}/> FINTRACK INSIGHT</div><p>{answer}</p></div>}</section></div>;
 }
 
 function Reports({setMessage}) {
