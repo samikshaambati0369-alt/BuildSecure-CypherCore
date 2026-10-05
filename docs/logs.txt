@@ -265,6 +265,31 @@ Actions Taken:
 * Appended this execution report to docs/logs.txt
 
 ================================================================================
+2026-10-06T00:22:41+05:30 Explaining requirements for using the AI assistant
+================================================================================
+User Prompt (verbatim):
+what is thecatch to use the assistant
+
+Agent Response:
+To use the assistant, sign in to FinTrack and have MySQL available with your account's transactions/budgets if you want personalized behavior-based advice. The UI is at http://localhost:5173/ and the assistant is in the AI Assistant navigation item. It works without an OpenAI key using local spending-summary suggestions; however, AI_API_KEY is currently empty in the backend environment, so OpenAI-generated answers are not enabled yet.
+
+To enable OpenAI, add a valid key to the backend-only src/backend/.env as AI_API_KEY=..., keep it out of all frontend variables, and restart the backend. OpenAI API use may incur charges on the account that owns the key. Leave AI_API_URL unset or set it exactly to https://api.openai.com/v1/chat/completions; the service rejects any other URL to prevent sending the key elsewhere. The authenticated AI route has a limit of 20 requests per hour, each question is limited to 1000 characters, and up to eight short chat history messages are sent per request. The app does not persist the chat; when OpenAI is enabled, the last-90-day aggregate income/expense, categories, monthly trends and budgets plus chat text are sent to OpenAI, not your name, email or transaction descriptions. Advice is general budgeting education, not regulated financial advice.
+
+Agent Response Summary:
+Explained the practical prerequisites and privacy/usage limits for using the assistant. Clarified that local suggestions already work without a key, while OpenAI responses require a valid backend-only API key and a backend restart; checked local configuration and confirmed the key and URL are currently empty.
+
+Commit SHA:
+N/A (explanation only; log update commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Checked local AI_API_KEY and AI_API_URL presence without showing secret values
+* Reviewed assistant configuration and route validation/rate limits
+* Appended this turn to docs/logs.txt
+
+================================================================================
 [2026-10-06T00:06:41+05:30] SESSION START
 ================================================================================
 Agent: GitHub Copilot
