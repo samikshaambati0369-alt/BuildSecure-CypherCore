@@ -462,7 +462,7 @@ Agent Response Summary:
 Clarified in the chat UI and model instructions that the last-90-days profile is collected automatically from the signed-in user's existing records, and a complete 90 days is not required. Documented this data flow and verified the tests and frontend build.
 
 Commit SHA:
-N/A (commit follows)
+28d2959
 
 Files Modified / Created:
 * src/ai-assistant/assistant.js (Modified)
