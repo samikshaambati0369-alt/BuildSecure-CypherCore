@@ -286,11 +286,46 @@ function BudgetProgress({b}) {
 }
 
 function AI({setMessage}) {
-  const [q,setQ]=useState('Analyze my spending and give me practical budgeting suggestions.');
-  const [answer,setAnswer]=useState('');
+  const [messages,setMessages]=useState([]);
+  const [question,setQuestion]=useState('');
   const [loading,setLoading]=useState(false);
-  const ask=async e=>{e.preventDefault();setLoading(true);try{const r=await api.post('/ai/insights',{question:q});setAnswer(r.data.data.answer);}catch(e){setMessage(e.response?.data?.message||'AI request failed');}finally{setLoading(false);}};
-  return <div className="page-content"><section className="ai-hero"><div className="ai-orb"><Bot size={34}/></div><span className="eyebrow">AI FINANCIAL ASSISTANT</span><h2>Turn your spending data into <span>useful decisions.</span></h2><p>The assistant analyzes only your authorized financial context and provides practical budgeting guidance.</p></section><section className="panel ai-panel"><form onSubmit={ask}><textarea value={q} onChange={e=>setQ(e.target.value)} placeholder="Ask about your spending..." rows="4"/><button className="primary" type="submit" disabled={loading}>{loading?'Analyzing...':'Get AI insight'} <Sparkles size={17}/></button></form>{answer&&<div className="ai-answer"><div className="answer-label"><Sparkles size={17}/> FINTRACK INSIGHT</div><p>{answer}</p></div>}</section></div>;
+  const messagesEndRef=useRef(null);
+  useEffect(()=>{messagesEndRef.current?.scrollIntoView({behavior:'smooth'});},[messages,loading]);
+  const send=async e=>{
+    e.preventDefault();
+    const prompt=question.trim();
+    if(!prompt||loading)return;
+    const history=messages.slice(-8).map(({role,content})=>({role,content}));
+    setMessages(current=>[...current,{role:'user',content:prompt}]);
+    setQuestion('');
+    setLoading(true);
+    setMessage('');
+    try{
+      const r=await api.post('/ai/chat',{question:prompt,history});
+      setMessages(current=>[...current,{role:'assistant',content:r.data.data.answer,provider:r.data.data.provider}]);
+    }catch(e){
+      setMessage(e.response?.data?.message||'AI request failed. Please try again.');
+      setMessages(current=>current.slice(0,-1));
+    }finally{setLoading(false);}
+  };
+  const askSuggestion=value=>setQuestion(value);
+  return <div className="page-content">
+    <section className="ai-hero"><div className="ai-orb"><Bot size={34}/></div><span className="eyebrow">AI FINANCIAL ASSISTANT</span><h2>Turn your spending data into <span>useful decisions.</span></h2><p>Ask follow-up questions about your recent spending, trends, and budgets.</p></section>
+    <section className="panel ai-chat-panel">
+      <div className="ai-chat-heading"><div><h3>Chat with FinTrack</h3><p>Your conversation is not saved by the app.</p></div><ShieldCheck size={20}/></div>
+      <div className="ai-chat-messages" role="log" aria-live="polite" aria-label="Financial assistant conversation">
+        {!messages.length&&<div className="ai-chat-welcome"><Sparkles size={20}/><p>Hi! I can help you understand spending patterns from your recent activity. What would you like to know?</p><div className="ai-suggestions"><button type="button" onClick={()=>askSuggestion('Where am I spending the most?')}>Where am I spending the most?</button><button type="button" onClick={()=>askSuggestion('How are my expenses changing month to month?')}>How are my expenses trending?</button><button type="button" onClick={()=>askSuggestion('Which budgets should I pay attention to?')}>How are my budgets doing?</button></div></div>}
+        {messages.map((message,index)=><article className={`ai-chat-message ${message.role}`} key={`${message.role}-${index}`}><strong>{message.role==='assistant'?'FinTrack assistant':'You'}</strong><p>{message.content}</p>{message.role==='assistant'&&<small>{message.provider==='openai'?'OpenAI':'Local spending insights (OpenAI key not configured)'}</small>}</article>)}
+        {loading&&<article className="ai-chat-message assistant"><strong>FinTrack assistant</strong><p>Reviewing your spending summary…</p></article>}
+        <div ref={messagesEndRef}/>
+      </div>
+      <form className="ai-chat-form" onSubmit={send}>
+        <textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Ask about your expenses or budgets…" rows="2" maxLength="1000" aria-label="Message the financial assistant" disabled={loading}/>
+        <button className="primary" type="submit" disabled={loading||!question.trim()}>{loading?'Thinking…':'Send'} <ArrowUpRight size={17}/></button>
+      </form>
+      <p className="ai-privacy-note">For personalized answers, a summary of your last 90 days (totals, category/month trends, and budgets) and your chat messages are sent to OpenAI when configured. Your name, email, and transaction descriptions are not included.</p>
+    </section>
+  </div>;
 }
 
 function Reports({setMessage}) {

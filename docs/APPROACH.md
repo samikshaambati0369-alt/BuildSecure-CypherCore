@@ -29,14 +29,14 @@
 *Describe the multi-tier system structure (Client / API Gateway / Domain Services / Data Persistence).*
 
 ### 2.2 Data Flow & Component Interaction
-*Outline how requests traverse the system from ingress to storage and back, highlighting trust boundaries.*
+The authenticated React client sends chat messages to `POST /api/ai/chat`. The Express route verifies the signed session, applies the AI request rate limit, validates message/history size and roles, and queries only rows scoped to the authenticated user's ID. It sends a minimized 90-day aggregate (income/expenses, category and monthly totals, active budgets) to the assistant; names, emails, and transaction descriptions are excluded. The OpenAI key remains server-side. Chat history is short-lived in the browser and is not persisted by the application.
 
 ### 2.3 Technology Stack Rationale
 *Explain the tools selected and why alternatives were rejected:*
 - **Backend / API Framework:** (e.g., FastAPI, Express, Go Gin) — *Why chosen:*
 - **Frontend / Client:** (e.g., React, Next.js, HTML/JS) — *Why chosen:*
 - **Database & Persistence:** (e.g., PostgreSQL, SQLite, Redis) — *Why chosen:*
-- **Authentication & Cryptography:** (e.g., Bcrypt/Argon2, PyJWT) — *Why chosen:*
+- **Authentication & Cryptography:** HttpOnly session cookie with signed JWT verification; bcrypt password hashing.
 
 ### 2.4 Defense-in-Depth Security Controls
 *Detail the specific security controls implemented:*
@@ -45,6 +45,7 @@
 3. **Input Validation & Sanitization:** (e.g., strict schema validation, query parameterization to prevent SQLi)
 4. **Rate Limiting & Abuse Prevention:** (e.g., IP/token bucket throttling on public endpoints)
 5. **Secrets & Configuration Hygiene:** (e.g., zero hardcoded credentials, 100% environment variable isolation)
+6. **Personalized AI:** AI routes require authentication, share a strict request-rate limit, accept only bounded user/assistant history, and derive financial context from the authenticated user's records. OpenAI is called only from the backend with a server-side API key; the URL is pinned to the official HTTPS endpoint. No raw descriptions or identity fields are sent. The client displays a privacy notice and local-only fallback is used when no API key is configured.
 
 ---
 
@@ -76,6 +77,15 @@
 - **Options Considered:**
 - **Decision & Rationale:**
 - **Security & Performance Trade-offs:**
+
+### ADR-003: Isolating Personalized Financial Assistant Requests
+- **Status:** Accepted
+- **Context:** Users need conversational, behavior-based budgeting suggestions without exposing account data or credentials to unauthenticated callers.
+- **Options Considered:**
+  1. Call OpenAI directly from the browser with transaction data.
+  2. Route authenticated chat through the backend and send only aggregate financial data.
+- **Decision & Rationale:** Use the backend route, verify the signed-in user, rate-limit and validate each request, and query a privacy-minimized 90-day profile scoped by user ID. Keep OpenAI credentials on the server and pin requests to OpenAI's official HTTPS chat endpoint.
+- **Security & Performance Trade-offs:** The external model receives the prompt, bounded recent chat history, and financial aggregates when configured; it does not receive names, emails, or raw descriptions. Calls have a timeout and bounded response, and a local aggregate-based fallback works without an API key. Chat history is not persisted by the application.
 
 ---
 
