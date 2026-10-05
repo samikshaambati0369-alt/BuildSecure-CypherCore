@@ -579,7 +579,7 @@ Agent Response Summary:
 Listed the runtime/database/config prerequisites and exact PowerShell commands to start MySQL-dependent backend and frontend separately. Emphasized that the frontend must be opened on port 5173 to match the backend's origin policy, and protected the `.env` secret.
 
 Commit SHA:
-N/A (log-only commit follows)
+b384695
 
 Files Modified / Created:
 * docs/logs.txt (Modified)
