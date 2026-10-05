@@ -4,9 +4,7 @@ import { body } from 'express-validator';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
 import { pool } from '../db.js';
-import { generateAssistantReply } from '../../ai-assistant/assistant.js';
-import { audit } from '../services/audit.js';
-
+import { generateAssistantReply } from '../ai-assistant/assistant.js';import { audit } from '../services/audit.js';
 const router = Router();
 const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
