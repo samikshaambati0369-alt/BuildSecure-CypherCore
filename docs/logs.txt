@@ -539,6 +539,41 @@ Actions Taken:
 * Preserved unrelated generated node_modules changes
 
 ================================================================================
+2026-10-06T01:06:18+05:30 Showing how to rerun FinTrack manually
+================================================================================
+User Prompt (verbatim):
+now show me to rerun manually
+
+Agent Response:
+To rerun FinTrack manually on Windows, make sure MySQL is running first (for example, start MySQL in the XAMPP Control Panel). If the existing frontend/backend terminals are already running, press Ctrl+C in each to stop them before starting new copies; otherwise a port may already be in use.
+
+Open two PowerShell terminals at the repository root.
+
+Backend terminal:
+    Set-Location C:\Users\Sathwik\BuildSecure-CypherCore\src\backend
+    npm.cmd run dev
+
+Frontend terminal:
+    Set-Location C:\Users\Sathwik\BuildSecure-CypherCore\src\frontend
+    npm.cmd run dev
+
+Keep both terminals open and open http://localhost:5173 in the browser. The backend should report that it is listening on port 5000; verify it at http://localhost:5000/api/health. Use the exact Vite URL printed in the frontend terminal if port 5173 is unavailable. Stop either server with Ctrl+C in its terminal. Do not share src/backend/.env or any passwords.
+
+Agent Response Summary:
+Provided Windows PowerShell instructions to restart MySQL, run the backend and frontend in separate terminals, open the browser, verify the API health endpoint, and stop the servers. Warned against duplicate processes occupying the ports and did not access secret configuration.
+
+Commit SHA:
+N/A (log-only commit follows)
+
+Files Modified / Created:
+* docs/logs.txt (Modified)
+
+Actions Taken:
+* Read AGENTS.md, recent log, approach documentation, app package scripts, and API URL configuration
+* Confirmed team onboarding is complete and branch is main
+* Preserved unrelated generated node_modules changes; did not modify application code
+
+================================================================================
 2026-10-06T01:05:14+05:30 Explaining the generic authentication request failure
 ================================================================================
 User Prompt (verbatim):
