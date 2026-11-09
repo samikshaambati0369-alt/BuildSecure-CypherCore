@@ -2,40 +2,67 @@ import crypto from 'crypto';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
+/**
+ * Normalize an origin so comparisons are consistent.
+ */
 function normalizeOrigin(value) {
+  if (!value) {
+    return '';
+  }
+
   try {
     return new URL(value).origin;
   } catch {
-    return null;
+    return '';
   }
 }
 
+/**
+ * Enforce browser Origin protection for state-changing requests.
+ *
+ * Allowed origins:
+ * - Production Vercel frontend from FRONTEND_URL
+ * - Localhost:5173
+ * - Localhost:5174
+ *
+ * Requests without an Origin header are allowed for:
+ * - Postman
+ * - Server-to-server requests
+ * - Other non-browser clients
+ */
 export function enforceBrowserOrigin(req, res, next) {
+  // GET, HEAD and OPTIONS are safe/read-only requests.
   if (SAFE_METHODS.has(req.method)) {
     return next();
   }
 
-  const expectedOrigin = normalizeOrigin(
-    process.env.FRONTEND_URL || 'http://localhost:5173'
-  );
+  const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'http://localhost:5174'
+].filter(Boolean);
 
   const requestOrigin = req.get('Origin');
 
-  // Allow non-browser/server-to-server requests that don't send Origin.
+  // Allow requests without an Origin header.
   if (!requestOrigin) {
     return next();
   }
 
-  if (requestOrigin !== expectedOrigin) {
+  // Block unknown browser origins.
+  if (!allowedOrigins.includes(requestOrigin)) {
     return res.status(403).json({
       success: false,
       message: 'Blocked by origin security policy'
     });
   }
 
-  next();
+  return next();
 }
 
+/**
+ * Validate important security configuration at startup.
+ */
 export function requireSecureConfig() {
   const secret = process.env.JWT_SECRET;
 
@@ -68,7 +95,9 @@ export function requireSecureConfig() {
   return true;
 }
 
-// Utility for generating secure random values if needed elsewhere.
+/**
+ * Generate a cryptographically secure random secret.
+ */
 export function generateSecureSecret(bytes = 32) {
   return crypto.randomBytes(bytes).toString('hex');
 }

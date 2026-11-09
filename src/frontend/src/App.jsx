@@ -152,8 +152,81 @@ function Dashboard({data}) {
     </div>
     <div className="grid-two">
       <section className="panel"><div className="panel-head"><div><h3>Spending by category</h3><p>Where your money is going</p></div></div>
-        {data.categories.length ? <ResponsiveContainer width="100%" height={280}><PieChart><Pie data={data.categories} dataKey="total" nameKey="category" innerRadius={75} outerRadius={105} paddingAngle={3}>{data.categories.map((_,i)=><Cell key={i}/>)}</Pie><Tooltip formatter={v=>`₹${Number(v).toLocaleString()}`}/></PieChart></ResponsiveContainer> : <div className="empty small">Add expenses to see your spending pattern.</div>}
-      </section>
+{data.categories.length ? (
+  <ResponsiveContainer width="100%" height={320}>
+    <PieChart>
+      <Pie
+        data={data.categories}
+        dataKey="total"
+        nameKey="category"
+        cx="50%"
+        cy="50%"
+        outerRadius={120}
+        paddingAngle={2}
+        labelLine={false}
+        label={({ cx, cy, midAngle, outerRadius, percent }) => {
+          const RADIAN = Math.PI / 180;
+          const radius = outerRadius * 0.65;
+
+          const x =
+            cx + radius * Math.cos(-midAngle * RADIAN);
+
+          const y =
+            cy + radius * Math.sin(-midAngle * RADIAN);
+
+          return percent >= 0.04 ? (
+            <text
+              x={x}
+              y={y}
+              fill="#ffffff"
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={14}
+              fontWeight="bold"
+            >
+              {`${(percent * 100).toFixed(0)}%`}
+            </text>
+          ) : null;
+        }}
+      >
+        {data.categories.map((entry, i) => {
+          const colors = [
+            "#FF6B6B",
+            "#4D96FF",
+            "#FFD93D",
+            "#6BCB77",
+            "#C77DFF",
+            "#FF922B",
+            "#00B8A9",
+            "#F06595",
+            "#845EF7",
+            "#20C997"
+          ];
+
+          return (
+            <Cell
+              key={entry.category || i}
+              fill={colors[i % colors.length]}
+              stroke="#ffffff"
+              strokeWidth={3}
+            />
+          );
+        })}
+      </Pie>
+
+      <Tooltip
+        formatter={(value, name) => [
+          `₹${Number(value).toLocaleString()}`,
+          name
+        ]}
+      />
+    </PieChart>
+  </ResponsiveContainer>
+) : (
+  <div className="empty small">
+    Add expenses to see your spending pattern.
+  </div>
+)}      </section>
       <section className="panel"><div className="panel-head"><div><h3>Budget health</h3><p>Current tracked budgets</p></div></div>
         {data.budgets.length ? data.budgets.slice(0,4).map(b=><BudgetProgress key={b.id} b={b}/>) : <div className="empty small">Create a budget to monitor your spending.</div>}
       </section>
